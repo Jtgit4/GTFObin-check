@@ -1,5 +1,15 @@
 #!/bin/bash
 
+display_help() {
+  echo "Usage: $0 [-r <reference_file>] [-b <target_binaries>] [-t <target_classes>] [-h]"
+  echo "Options:"
+  echo "  -r, --reference    Specify the reference file of binaries to check individually"
+  echo "  -b, --binary       Define a binary or binaries separated by a comma"
+  echo "  -t, --type         Specify the type of exploit(s) you are looking for e.g. sudo"
+  echo "  -h, --help         Display this help message"
+  exit 0
+}
+
 reference_file=""
 target_binaries=""
 target_classes=""
@@ -23,12 +33,19 @@ while [[ $# -gt 0 ]]; do
       shift
       shift
       ;;
+    -h|--help)
+      display_help
+      ;;
     *)
       echo "Unknown option: $1"
       exit 1
       ;;
   esac
 done
+
+if [[ -z $reference_file && -z $target_binaries ]]; then
+  display_help
+fi
 
 if [[ -z $reference_file && -z $target_binaries ]]; then
   echo "No reference file or target binaries specified. Usage: $0 [-r <reference_file>] [-b <target_binaries>] [-t <target_classes>]"
