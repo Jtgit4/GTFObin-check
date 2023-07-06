@@ -1,5 +1,8 @@
 #!/bin/bash
 
+reference_file=""
+target_binaries=""
+
 while [[ $# -gt 0 ]]; do
   key="$1"
 
@@ -9,8 +12,8 @@ while [[ $# -gt 0 ]]; do
       shift
       shift
       ;;
-    -t|--type)
-      class_types="$2"
+    -b|--binary)
+      target_binaries="$2"
       shift
       shift
       ;;
@@ -21,16 +24,26 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ -z $reference_file ]]; then
-  echo "Reference file not specified. Usage: $0 -r <reference_file> [-t <class_types>]"
+if [[ -z $reference_file && -z $target_binaries ]]; then
+  echo "No reference file or target binaries specified. Usage: $0 [-r <reference_file>] [-b <target_binaries>]"
   exit 1
 fi
 
-while IFS= read -r binary_path; do
-  binary_name=$(basename "$binary_path")
-  formatted_binary_name="${binary_name##*/}"
+if [[ -n $reference_file && ! -f $reference_file ]]; then
+  echo "Reference file '$reference_file' does not exist or is not a regular file."
+  exit 1
+fi
 
-  url="https://gtfobins.github.io/gtfobins/$formatted_binary_name/"
+if [[ -n $target_binaries ]]; then
+  IFS=',' read -ra binaries <<< "$target_binaries"
+else
+  mapfile -t binaries < "$reference_file"
+fi
+
+for binary in "${binaries[@]}"; do
+  binary_path="/usr/bin/$binary"
+
+  url="https://gtfobins.github.io/gtfobins/$binary/"
 
   if curl --head --silent --fail "$url" >/dev/null; then
     echo "$binary_path ===> ENTRY FOUND $url"
@@ -52,4 +65,4 @@ while IFS= read -r binary_path; do
     echo "$binary_path ===> NO ENTRY FOUND"
   fi
 
-done < "$reference_file"
+done
