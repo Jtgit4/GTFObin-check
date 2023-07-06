@@ -2,6 +2,7 @@
 
 reference_file=""
 target_binaries=""
+target_classes=""
 
 while [[ $# -gt 0 ]]; do
   key="$1"
@@ -17,6 +18,11 @@ while [[ $# -gt 0 ]]; do
       shift
       shift
       ;;
+    -t|--type)
+      target_classes="$2"
+      shift
+      shift
+      ;;
     *)
       echo "Unknown option: $1"
       exit 1
@@ -25,7 +31,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ -z $reference_file && -z $target_binaries ]]; then
-  echo "No reference file or target binaries specified. Usage: $0 [-r <reference_file>] [-b <target_binaries>]"
+  echo "No reference file or target binaries specified. Usage: $0 [-r <reference_file>] [-b <target_binaries>] [-t <target_classes>]"
   exit 1
 fi
 
@@ -43,22 +49,33 @@ fi
 for binary in "${binaries[@]}"; do
   binary_path="/usr/bin/$binary"
 
+  if [[ -z $reference_file && -z $target_binaries ]]; then
+    if [[ ! -x $binary_path ]]; then
+      echo "Binary '$binary' does not exist or is not executable."
+      continue
+    fi
+  fi
+
   url="https://gtfobins.github.io/gtfobins/$binary/"
 
   if curl --head --silent --fail "$url" >/dev/null; then
     echo "$binary_path ===> ENTRY FOUND $url"
 
-    h2_classes=$(curl -s "$url" | grep -oP '(?<=<h2 id=")[^"]+' | sed 's/-/_/g')
-
-    if [[ -n $class_types ]]; then
+    if [[ -n $target_classes ]]; then
+      h2_classes=$(curl -s "$url" | grep -oP '(?<=<h2 id=")[^"]+' | sed 's/-/_/g')
       filtered_classes=""
-      for class_type in $(echo "$class_types" | sed 's/,/ /g'); do
+      for class_type in $(echo "$target_classes" | sed 's/,/ /g'); do
         filtered_classes+=$(echo -e "$h2_classes" | grep -w "$class_type" | sed 's/^/\t===> Class: /')
         filtered_classes+="\n"
       done
-      echo -e "$filtered_classes"
+      if [[ -n $filtered_classes ]]; then
+        echo -e "$filtered_classes"
+      fi
     else
-      echo -e "\t===> Classes:\n$(echo -e "$h2_classes" | sed 's/^/\t===> Class: /')"
+      h2_classes=$(curl -s "$url" | grep -oP '(?<=<h2 id=")[^"]+' | sed 's/-/_/g')
+      if [[ -n $h2_classes ]]; then
+        echo -e "\t===> Classes:\n$(echo -e "$h2_classes" | sed 's/^/\t===> Class: /')"
+      fi
     fi
 
   else
