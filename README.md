@@ -39,7 +39,7 @@ Example Output
         ===> Class: file_upload
 ```
 
-**Useage**
+**Usage**
 
 **-b or --binary** : Used to define a binary or binaries seperated by a comma.
 
